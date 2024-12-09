@@ -18,7 +18,7 @@ class Player{
                 
         }
     
-    void Draw(sf::RenderWindow window)
+    void Draw(sf::RenderWindow& window)
     {
         sf::Transform transform;
         transform.translate(position).rotate(angle);
@@ -42,7 +42,7 @@ int main(){
     sf::Event e{};
     while (window.pollEvent(e))
     {
-        if (e.type = sf::Event::Closed)
+        if (e.type == sf::Event::Closed)
         {
             window.close();
         }
