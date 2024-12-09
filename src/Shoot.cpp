@@ -6,10 +6,10 @@ public:
     Player()
         : position(500, 500), angle(45), array(sf::Quads, 4) {
         // Coordenadas relativas al centro del jugador
-        array[0].position = sf::Vector2f(-15, -15);
-        array[1].position = sf::Vector2f(-15, 15);
-        array[2].position = sf::Vector2f(15, 15);
-        array[3].position = sf::Vector2f(15, -15);
+        array[0].position = sf::Vector2f(0, -30);
+        array[1].position = sf::Vector2f(-30, 30);
+        array[2].position = sf::Vector2f(0, 15);
+        array[3].position = sf::Vector2f(30, 30);
 
         // Asignar colores para cada vértice (opcional)
         for (size_t i = 0; i < array.getVertexCount(); i++) {
