@@ -21,6 +21,7 @@ constexpr float ASTEROID_W = 90.0f;
 constexpr float ASTEROID_H = 80.0f;
 constexpr float ASTEROID_SPIN = 25.0f;
 constexpr float ASTEROID_SPEED = 280.0f;
+constexpr float ASTEROID_SPAWN_TIME = 3.0f;
 
 // Clase base para entidades
 class Entity {
@@ -116,8 +117,9 @@ private:
 // Clase Asteroid
 class Asteroid : public Entity {
 public:
-    Asteroid(sf::Vector2f direction)
-        : Entity(sf::Vector2f(900, 300), 0), direction(direction), array(sf::LinesStrip, 12) {
+    Asteroid(sf::Vector2f direction = Asteroid::getRandomDirection(),
+         sf::Vector2f position = Asteroid::getRandomPosition())
+        : Entity(position, 0), direction(direction), array(sf::LinesStrip, 12) {
         array[0].position = sf::Vector2f(-40, 40);
         array[1].position = sf::Vector2f(-50, 10);
         array[2].position = sf::Vector2f(-10, -20);
@@ -140,19 +142,17 @@ public:
         position += ASTEROID_SPEED * direction * deltaTime;
         angle += ASTEROID_SPIN * deltaTime;
 
-        if (position.x < ASTEROID_W / 2.0f)
-        {
-            direction.x = abs(direction.x);
-        } else if (position.x > SCREEN_WIDTH - ASTEROID_W / 2.0f){
-            direction.x = -abs(direction.x);
-        }
+        if (position.x <= ASTEROID_W / 2.0f) {
+    direction.x = std::abs(direction.x); // Rebote hacia la derecha
+} else if (position.x >= SCREEN_WIDTH - ASTEROID_W / 2.0f) {
+    direction.x = -std::abs(direction.x); // Rebote hacia la izquierda
+}
 
-        if (position.y < ASTEROID_H / 2.0f)
-        {
-            direction.y = abs(direction.y);
-        } else if (position.y > SCREEN_HEIGHT - ASTEROID_H / 2.0f){
-            direction.y = -abs(direction.y);
-        }
+if (position.y <= ASTEROID_H / 2.0f) {
+    direction.y = std::abs(direction.y); // Rebote hacia abajo
+} else if (position.y >= SCREEN_HEIGHT - ASTEROID_H / 2.0f) {
+    direction.y = -std::abs(direction.y); // Rebote hacia arriba
+}
         
     }
 
@@ -166,6 +166,17 @@ public:
         float angle = dist(gen);
         return sf::Vector2f(cos(angle), sin(angle));
     }
+        static sf::Vector2f getRandomPosition(){
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> xAxis(ASTEROID_W / 2.0f,
+             SCREEN_WIDTH - ASTEROID_W / 2.0f); 
+        std::uniform_real_distribution<float> yAxis(ASTEROID_W / 2.0f,
+             SCREEN_HEIGHT - ASTEROID_H / 2.0f);
+
+             return sf::Vector2f(xAxis(gen), yAxis(gen));
+        
+    }
 private:
     sf::VertexArray array;
     sf::Vector2f direction;
@@ -174,11 +185,12 @@ private:
 // Función principal
 int main() {
     sf::RenderWindow window(sf::VideoMode(1200, 900), "Shooting Project",
-                            sf::Style::Close | sf::Style::Titlebar);
+    sf::Style::Close | sf::Style::Titlebar);
     sf::Clock clock;
 
     entities.push_back(new Player());
-    entities.push_back(new Asteroid(sf::Vector2f(0, 1)));
+   
+    float asteroidSpawnTime = ASTEROID_SPAWN_TIME;
 
     while (window.isOpen()) {
         float deltaTime = clock.restart().asSeconds();
@@ -198,6 +210,15 @@ int main() {
         toRemoveList.clear();
         window.clear(sf::Color::Black);
 
+        asteroidSpawnTime -=deltaTime;
+
+        for (size_t i = 0; i < entities.size(); i++)
+        {
+            entities[i]->update(deltaTime);
+            entities[i]->render(window);
+        }
+        
+
         // Actualizar y renderizar entidades
         for (auto entity : entities) {
             entity->update(deltaTime);
@@ -214,6 +235,12 @@ int main() {
         for (auto& ptr : toAddList) {
             entities.push_back(ptr);
         }
+        if (asteroidSpawnTime <= 0.0f){
+           entities.push_back(new Asteroid());
+            asteroidSpawnTime = ASTEROID_SPAWN_TIME;
+        }
+
+        
 
         window.display();
     }
