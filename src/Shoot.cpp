@@ -327,7 +327,7 @@ int main() {
             }
 
             // Detectar si el jugador presiona Space para reiniciar el juego
-            if (gameOver && e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::Space) {
+            if (gameOver && e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::P) {
                 // Reiniciar el juego
                 gameOver = false;
                 score = 0;
@@ -422,7 +422,7 @@ int main() {
             restartText.setFont(font);
             restartText.setCharacterSize(40);
             restartText.setFillColor(sf::Color::White);
-            restartText.setString("Press Space to Restart");
+            restartText.setString("Press P to Restart");
             restartText.setPosition(SCREEN_WIDTH / 2 - restartText.getLocalBounds().width / 2, 
                                     SCREEN_HEIGHT / 2 + 100);
             window.draw(restartText);
