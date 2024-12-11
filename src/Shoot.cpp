@@ -5,6 +5,7 @@
 #include <list>
 #include <random>
 #include <algorithm>
+#include <SFML/Audio.hpp>
 
 // Constantes
 constexpr float SCREEN_WIDTH = 1200.0f;
@@ -92,6 +93,10 @@ public:
         for (size_t i = 0; i < array.getVertexCount(); i++) {
             array[i].color = sf::Color::White;
         }
+        shootSoundBuffer.loadFromFile("assets/music/Shoot.wav");
+        ShootSound.setBuffer(shootSoundBuffer);
+        ShootSound.setVolume(100); // Volumen máximo
+
     }
 
     void update(float deltaTime) override {
@@ -112,6 +117,7 @@ public:
             position.y = std::min(std::max(position.y, PLAYER_H / 2.0f), SCREEN_HEIGHT - PLAYER_H / 2.0f);
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && shootTimer <= 0.0f) {
+            ShootSound.play();
             shootTimer = SHOOT_DELAY;
             float radians = angle * (M_P / 180.0f);
             toAddList.push_back(new Bullet(position, sf::Vector2f(cos(radians), sin(radians))));
@@ -125,6 +131,8 @@ public:
 private:
     sf::VertexArray array;
     float shootTimer;
+    sf::SoundBuffer shootSoundBuffer;
+    sf::Sound ShootSound;
 };
 
 // Clase Asteroid
@@ -191,6 +199,17 @@ private:
 int main() {
     sf::RenderWindow window(sf::VideoMode(static_cast<int>(SCREEN_WIDTH), static_cast<int>(SCREEN_HEIGHT)), "Asteroids Game", sf::Style::Close | sf::Style::Titlebar);
     sf::Clock clock;
+    // Música de fondo
+    sf::Music backgroundMusic;
+    if (!backgroundMusic.openFromFile("assets/music/message-of-the-sun-72756.mp3")) {
+        std::cerr << "Error al cargar el archivo de música de fondo." << std::endl;
+        return -1;
+    }
+    backgroundMusic.setLoop(true);
+    backgroundMusic.setVolume(70);
+    backgroundMusic.play();
+
+    // Resto del código...
 
     entities.push_back(new Player());
     int score = 0; // Puntaje inicial
@@ -198,7 +217,7 @@ int main() {
     // Cargar la fuente
     sf::Font font;
     if (!font.loadFromFile("assets/fonts/Minecraft.ttf")) {
-        std::cerr << "No se pudo cargar la fuente." << std::endl;
+        std::cerr << "Cannot load the font." << std::endl;
         return -1;
     }
 
@@ -210,6 +229,14 @@ int main() {
     scoreText.setPosition(50.0f, 50.0f); // Posición del puntaje (más abajo)
 
     float asteroidSpawnTime = ASTEROID_SPAWN_TIME;
+    sf::SoundBuffer explosionBuffer;
+    sf::Sound explosionSound;
+    if (!explosionBuffer.loadFromFile("assets/music/pop.mp3")) {
+        std::cerr << "Error al cargar el archivo de sonido de explosión." << std::endl;
+        return -1;
+    }
+    explosionSound.setBuffer(explosionBuffer);
+    explosionSound.setVolume(100);
 
     while (window.isOpen()) {
         float deltaTime = clock.restart().asSeconds();
@@ -265,7 +292,7 @@ int main() {
         toAddList.clear();
 
         // Actualizar el texto del puntaje
-        scoreText.setString("Puntaje: " + std::to_string(score));
+        scoreText.setString("Score: " + std::to_string(score));
 
         // Renderizado
         window.clear();
