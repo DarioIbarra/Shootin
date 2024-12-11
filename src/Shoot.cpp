@@ -33,7 +33,6 @@ bool checkCollision(const sf::Vector2f& pos1, float radius1, const sf::Vector2f&
     return distanceSquared <= (radiusSum * radiusSum);
 }
 
-
 // Clase base para entidades
 class Entity {
 public:
@@ -57,7 +56,6 @@ public:
         : shape(3.0f), direction(direction), Entity(position, 0.0f), lifetime(BULLET_LIFE), radius(5.0f) {
         shape.setFillColor(sf::Color::White);
     }
-
 
     void update(float deltaTime) override {
         lifetime -= deltaTime;
@@ -195,6 +193,21 @@ int main() {
     sf::Clock clock;
 
     entities.push_back(new Player());
+    int score = 0; // Puntaje inicial
+
+    // Cargar la fuente
+    sf::Font font;
+    if (!font.loadFromFile("assets/fonts/Minecraft.ttf")) {
+        std::cerr << "No se pudo cargar la fuente." << std::endl;
+        return -1;
+    }
+
+    // Crear el texto para el puntaje
+    sf::Text scoreText;
+    scoreText.setFont(font);
+    scoreText.setCharacterSize(40); // Tamaño de la fuente
+    scoreText.setFillColor(sf::Color::White); // Color blanco para que se vea bien
+    scoreText.setPosition(50.0f, 50.0f); // Posición del puntaje (más abajo)
 
     float asteroidSpawnTime = ASTEROID_SPAWN_TIME;
 
@@ -202,7 +215,7 @@ int main() {
         float deltaTime = clock.restart().asSeconds();
         sf::Event e{};
         while (window.pollEvent(e)) {
-                        if (e.type == sf::Event::Closed) {
+            if (e.type == sf::Event::Closed) {
                 window.close();
             }
         }
@@ -222,18 +235,18 @@ int main() {
         // Detectar colisiones entre balas y asteroides
         for (auto& entity1 : entities) {
             Bullet* bullet = dynamic_cast<Bullet*>(entity1);
-                if (bullet) {
-            for (auto& entity2 : entities) {
-                Asteroid* asteroid = dynamic_cast<Asteroid*>(entity2);
+            if (bullet) {
+                for (auto& entity2 : entities) {
+                    Asteroid* asteroid = dynamic_cast<Asteroid*>(entity2);
                     if (asteroid && checkCollision(bullet->position, 5.0f, asteroid->position, ASTEROID_W / 2.0f)) {
-                // Colisión detectada
-                    toRemoveList.push_back(bullet);
-                    toRemoveList.push_back(asteroid);
+                        // Colisión detectada
+                        toRemoveList.push_back(bullet);
+                        toRemoveList.push_back(asteroid);
+                        score += 20; // Incrementar puntaje al destruir un asteroide
+                    }
                 }
             }
         }
-    }
-
 
         // Eliminar entidades marcadas
         for (auto& entity : toRemoveList) {
@@ -251,11 +264,15 @@ int main() {
         }
         toAddList.clear();
 
+        // Actualizar el texto del puntaje
+        scoreText.setString("Puntaje: " + std::to_string(score));
+
         // Renderizado
         window.clear();
         for (auto& entity : entities) {
             entity->render(window);
         }
+        window.draw(scoreText); // Dibujar el puntaje en la pantalla
         window.display();
     }
 
@@ -266,5 +283,7 @@ int main() {
 
     return 0;
 }
+
+
 
 
