@@ -1,49 +1,46 @@
-# EjemplosJuego
+# GameExamples
 
-El proyecto esta desarrollado sobre MinGW64 utilizando Msys2
-y como editor se esta utilizando Visual Studio Code
+The project is developed on MinGW64 using Msys2, and Visual Studio Code is used as the editor.
 
-## Como ejecutar los ejemplos
+## How to execute the codes
 
-Instalar todas las dependencias descritas abajo y dentro de una terminal de vscode ejecutar:
+Install all the dependencies described below and within a vscode terminal execute:
 
-> make run'NombreEjecutable'
+> make run'ExecutableName'
 
-Por ejemplo para ejecutar '00_Ventana.cpp' correr el comando en la terminal de vscode:
+For example, to execute '00_Ventana.cpp', run the command in the vscode terminal:
 
 > make run00_Ventana
 
+## Needed programs
 
-## Programas necesarios
-
-### Visual estudio code
-Descargar e instalar vscode en el siguiente [Enlace.](https://code.visualstudio.com/)
+### Visual Studio Code
+Download and install vscode from the following [link.](https://code.visualstudio.com/)
 
 ### MSYS2 (Windows)
 
-Instalar Msys2 usando el siguiente [Enlace.](https://github.com/msys2/msys2-installer/releases/download/2023-05-26/msys2-x86_64-20230526.exe)
+Install Msys2 using the following [link.](https://github.com/msys2/msys2-installer/releases/download/2023-05-26/msys2-x86_64-20230526.exe)
 
-No modificar ningua opcion al momento de intalacion o podrian variar las configuraciones.
+Do not modify any options during installation as it could change the configurations.
 
-Una vez instalado es necesario agregar los siguientes directorios al path de windows y reiniciar.
+Once installed, you need to add the following directories to the Windows path and restart.
 
 > C:\msys64\mingw64\bin
 
 > C:\msys64\usr\bin
 
-### Github Desktop
-Cliente de escritorio para clonar el repositorio, descargar usando el siguiente [enlace](https://desktop.github.com/).
+### GitHub Desktop
+Desktop client for cloning the repository, download using the following [link](https://desktop.github.com/).
 
 ### Git
-Para poder realizar commits de vscode es necesario tener instalado Git, descargarlo del siguiente [enlace](https://git-scm.com/).
+To be able to commit from vscode, you need to have Git installed, download it from the following [link](https://git-scm.com/).
 
+## Used libraries (Msys2)
 
-## Librerias utilizadas (Msys2)
-
-Ejecutar los siguientes comandos en la terminal de msys2 para instalar las dependencias necesarias
+Execute the following commands in the msys2 terminal to install the necessary dependencies
 
 ### DevTools
-Compiladores y herramientas necesarias para el desarrollo.
+Compilers and tools needed for development.
 
 https://code.visualstudio.com/docs/cpp/config-mingw
 > pacman -S --needed base-devel mingw-w64-x86_64-toolchain
@@ -52,14 +49,22 @@ https://code.visualstudio.com/docs/cpp/config-mingw
 https://packages.msys2.org/package/mingw-w64-x86_64-sfml
 > pacman -S mingw-w64-x86_64-sfml
 
-### Box2D simulaciones de fisica - C++
+### Box2D Physics simulation - C++
 https://box2d.org/documentation/
 https://packages.msys2.org/package/mingw-w64-x86_64-box2d?repo=mingw64
 pacman -S mingw-w64-x86_64-box2d
 
-## Complementos necesarios VSCode
+## Necessary complements for VSCode
 
 - Material Icon
 - C/C++
 - PlantUML
 - GitGraph
+
+## Controls to Play
+- from your keybord you have to localize the keys:
+- **W** moves up
+- **A** moves left
+- **D** moves right
+- **S** moves down
+- **Space** shoots
