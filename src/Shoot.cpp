@@ -275,6 +275,7 @@ private:
 int main() {
     sf::RenderWindow window(sf::VideoMode(static_cast<int>(SCREEN_WIDTH), static_cast<int>(SCREEN_HEIGHT)), "Asteroids Game", sf::Style::Close | sf::Style::Titlebar);
     sf::Clock clock;
+
     // Música de fondo
     sf::Music backgroundMusic;
     if (!backgroundMusic.openFromFile("assets/music/message-of-the-sun-72756.mp3")) {
@@ -285,9 +286,10 @@ int main() {
     backgroundMusic.setVolume(70);
     backgroundMusic.play();
 
-    // Resto del código...
-    
+    // Entidades del juego
+    std::vector<Entity*> entities;
     entities.push_back(new Player());
+
     int score = 0; // Puntaje inicial
 
     // Cargar la fuente
@@ -301,8 +303,8 @@ int main() {
     sf::Text scoreText;
     scoreText.setFont(font);
     scoreText.setCharacterSize(40); // Tamaño de la fuente
-    scoreText.setFillColor(sf::Color::White); // Color blanco para que se vea bien
-    scoreText.setPosition(50.0f, 50.0f); // Posición del puntaje (más abajo)
+    scoreText.setFillColor(sf::Color::White); // Color blanco
+    scoreText.setPosition(50.0f, 50.0f); // Posición del puntaje
 
     float asteroidSpawnTime = ASTEROID_SPAWN_TIME;
     sf::SoundBuffer explosionBuffer;
@@ -314,12 +316,28 @@ int main() {
     explosionSound.setBuffer(explosionBuffer);
     explosionSound.setVolume(100);
 
+    bool gameOver = false;  // Variable que indica si el juego ha terminado
+
     while (window.isOpen()) {
         float deltaTime = clock.restart().asSeconds();
         sf::Event e{};
         while (window.pollEvent(e)) {
             if (e.type == sf::Event::Closed) {
                 window.close();
+            }
+
+            // Detectar si el jugador presiona Space para reiniciar el juego
+            if (gameOver && e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::Space) {
+                // Reiniciar el juego
+                gameOver = false;
+                score = 0;
+
+                // Limpiar las entidades y reiniciar
+                for (auto& entity : entities) {
+                    delete entity;
+                }
+                entities.clear();
+                entities.push_back(new Player());  // Crear el jugador nuevamente
             }
         }
 
@@ -351,7 +369,21 @@ int main() {
             }
         }
 
-        // Eliminar entidades marcadas
+        // Detectar colisión entre el jugador y los asteroides
+        for (auto& entity : entities) {
+            Player* player = dynamic_cast<Player*>(entity);
+            if (player) {
+                for (auto& entity2 : entities) {
+                    Asteroid* asteroid = dynamic_cast<Asteroid*>(entity2);
+                    if (asteroid && checkCollision(player->position, PLAYER_W / 2.0f, asteroid->position, ASTEROID_W / 2.0f)) {
+                        // Colisión detectada entre el jugador y un asteroide
+                        gameOver = true;  // El juego ha terminado
+                    }
+                }
+            }
+        }
+
+        // Eliminar entidades marcadas para ser eliminadas
         for (auto& entity : toRemoveList) {
             auto it = std::find(entities.begin(), entities.end(), entity);
             if (it != entities.end()) {
@@ -371,21 +403,52 @@ int main() {
         scoreText.setString("Score: " + std::to_string(score));
 
         // Renderizado
-        window.clear();
-        for (auto& entity : entities) {
-            entity->render(window);
+        if (gameOver) {
+            // Limpiar la pantalla con fondo negro cuando el juego haya terminado
+            window.clear(sf::Color::Black);
+
+            // Mostrar el mensaje de "Game Over"
+            sf::Text gameOverText;
+            gameOverText.setFont(font);
+            gameOverText.setCharacterSize(80);
+            gameOverText.setFillColor(sf::Color::White);
+            gameOverText.setString("GAME OVER");
+            gameOverText.setPosition(SCREEN_WIDTH / 2 - gameOverText.getLocalBounds().width / 2, 
+                                     SCREEN_HEIGHT / 2 - gameOverText.getLocalBounds().height / 2);
+            window.draw(gameOverText);
+
+            // Mostrar la opción de reiniciar
+            sf::Text restartText;
+            restartText.setFont(font);
+            restartText.setCharacterSize(40);
+            restartText.setFillColor(sf::Color::White);
+            restartText.setString("Press Space to Restart");
+            restartText.setPosition(SCREEN_WIDTH / 2 - restartText.getLocalBounds().width / 2, 
+                                    SCREEN_HEIGHT / 2 + 100);
+            window.draw(restartText);
+        } else {
+            // Limpiar la pantalla y mostrar el juego normal si no está en "Game Over"
+            window.clear();
+            for (auto& entity : entities) {
+                entity->render(window);
+            }
+            window.draw(scoreText); // Dibujar el puntaje
         }
-        window.draw(scoreText); // Dibujar el puntaje en la pantalla
+
         window.display();
     }
 
-    // Liberar memoria al finalizar el programa
+    // Liberar memoria
     for (auto& entity : entities) {
         delete entity;
     }
 
     return 0;
 }
+
+
+
+
 
 
 
