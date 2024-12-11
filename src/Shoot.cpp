@@ -18,11 +18,21 @@ constexpr float PLAYER_SPEED = 200.0f;
 constexpr float SHOOT_DELAY = 0.2f;
 constexpr float BULLET_SPEED = 400.0f;
 constexpr float BULLET_LIFE = 3.0f;
+
 constexpr float ASTEROID_W = 90.0f;
 constexpr float ASTEROID_H = 80.0f;
 constexpr float ASTEROID_SPIN = 25.0f;
 constexpr float ASTEROID_SPEED = 280.0f;
 constexpr float ASTEROID_SPAWN_TIME = 3.0f;
+
+bool checkCollision(const sf::Vector2f& pos1, float radius1, const sf::Vector2f& pos2, float radius2) {
+    float dx = pos1.x - pos2.x;
+    float dy = pos1.y - pos2.y;
+    float distanceSquared = dx * dx + dy * dy;
+    float radiusSum = radius1 + radius2;
+    return distanceSquared <= (radiusSum * radiusSum);
+}
+
 
 // Clase base para entidades
 class Entity {
@@ -44,7 +54,10 @@ std::list<Entity*> toAddList{};
 class Bullet : public Entity {
 public:
     Bullet(sf::Vector2f position, sf::Vector2f direction)
-        : shape(1.0f), direction(direction), Entity(position, 0.0f), lifetime(BULLET_LIFE) {}
+        : shape(3.0f), direction(direction), Entity(position, 0.0f), lifetime(BULLET_LIFE), radius(5.0f) {
+        shape.setFillColor(sf::Color::White);
+    }
+
 
     void update(float deltaTime) override {
         lifetime -= deltaTime;
@@ -64,13 +77,14 @@ private:
     sf::CircleShape shape;
     sf::Vector2f direction;
     float lifetime;
+    float radius;
 };
 
 // Clase Player
 class Player : public Entity {
 public:
     Player()
-        : Entity(sf::Vector2f(500, 500), 0), array(sf::LinesStrip, 5), shootTimer(0) {
+        : Entity(sf::Vector2f(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2), 0), array(sf::LinesStrip, 5), shootTimer(0) {
         array[0].position = sf::Vector2f(20, 0);
         array[1].position = sf::Vector2f(-30, -20);
         array[2].position = sf::Vector2f(-15, 0);
@@ -119,7 +133,7 @@ private:
 class Asteroid : public Entity {
 public:
     Asteroid(sf::Vector2f direction = Asteroid::getRandomDirection(),
-         sf::Vector2f position = Asteroid::getRandomPosition())
+             sf::Vector2f position = Asteroid::getRandomPosition())
         : Entity(position, 0), direction(direction), array(sf::LinesStrip, 12) {
         array[0].position = sf::Vector2f(-40, 40);
         array[1].position = sf::Vector2f(-50, 10);
@@ -170,13 +184,14 @@ public:
     }
 
 private:
+    float radius = ASTEROID_W / 2.0f;
     sf::VertexArray array;
     sf::Vector2f direction;
 };
 
 // Función principal
 int main() {
-    sf::RenderWindow window(sf::VideoMode(1200, 900), "Shooting Project", sf::Style::Close | sf::Style::Titlebar);
+    sf::RenderWindow window(sf::VideoMode(static_cast<int>(SCREEN_WIDTH), static_cast<int>(SCREEN_HEIGHT)), "Asteroids Game", sf::Style::Close | sf::Style::Titlebar);
     sf::Clock clock;
 
     entities.push_back(new Player());
@@ -187,49 +202,67 @@ int main() {
         float deltaTime = clock.restart().asSeconds();
         sf::Event e{};
         while (window.pollEvent(e)) {
-            if (e.type == sf::Event::Closed) {
+                        if (e.type == sf::Event::Closed) {
                 window.close();
-            } else if (e.type == sf::Event::KeyPressed) {
-                if (e.key.code == sf::Keyboard::Q) {
-                    std::cout << "Entities count: " << entities.size() << std::endl;
-                }
             }
         }
 
-        window.clear(sf::Color::Black);
-
-        // Actualizar y renderizar entidades
-        for (auto entity : entities) {
-            entity->update(deltaTime);
-            entity->render(window);
+        // Lógica de generación de asteroides
+        asteroidSpawnTime -= deltaTime;
+        if (asteroidSpawnTime <= 0.0f) {
+            asteroidSpawnTime = ASTEROID_SPAWN_TIME;
+            toAddList.push_back(new Asteroid());
         }
 
+        // Actualización de las entidades
+        for (auto& entity : entities) {
+            entity->update(deltaTime);
+        }
+
+        // Detectar colisiones entre balas y asteroides
+        for (auto& entity1 : entities) {
+            Bullet* bullet = dynamic_cast<Bullet*>(entity1);
+                if (bullet) {
+            for (auto& entity2 : entities) {
+                Asteroid* asteroid = dynamic_cast<Asteroid*>(entity2);
+                    if (asteroid && checkCollision(bullet->position, 5.0f, asteroid->position, ASTEROID_W / 2.0f)) {
+                // Colisión detectada
+                    toRemoveList.push_back(bullet);
+                    toRemoveList.push_back(asteroid);
+                }
+            }
+        }
+    }
+
+
         // Eliminar entidades marcadas
-        for (auto entity : toRemoveList) {
-            delete entity;
-            entities.erase(std::remove(entities.begin(), entities.end(), entity), entities.end());
+        for (auto& entity : toRemoveList) {
+            auto it = std::find(entities.begin(), entities.end(), entity);
+            if (it != entities.end()) {
+                delete *it;
+                entities.erase(it);
+            }
         }
         toRemoveList.clear();
 
         // Añadir nuevas entidades
-        entities.insert(entities.end(), toAddList.begin(), toAddList.end());
+        for (auto& entity : toAddList) {
+            entities.push_back(entity);
+        }
         toAddList.clear();
 
-        // Generar asteroides
-        asteroidSpawnTime -= deltaTime;
-        if (asteroidSpawnTime <= 0.0f) {
-            entities.push_back(new Asteroid());
-            asteroidSpawnTime = ASTEROID_SPAWN_TIME;
+        // Renderizado
+        window.clear();
+        for (auto& entity : entities) {
+            entity->render(window);
         }
-
         window.display();
     }
 
-    // Liberar memoria
-    for (auto entity : entities) {
+    // Liberar memoria al finalizar el programa
+    for (auto& entity : entities) {
         delete entity;
     }
-    entities.clear();
 
     return 0;
 }
