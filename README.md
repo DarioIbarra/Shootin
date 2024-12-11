@@ -68,3 +68,4 @@ pacman -S mingw-w64-x86_64-box2d
 - **D** moves right
 - **S** moves down
 - **Space** shoots
+- **p** re start
