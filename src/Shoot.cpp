@@ -6,6 +6,7 @@
 #include <random>
 #include <algorithm>
 #include <SFML/Audio.hpp>
+#include <functional>
 
 // Constantes
 constexpr float SCREEN_WIDTH = 1200.0f;
@@ -26,6 +27,7 @@ constexpr float ASTEROID_SPIN = 25.0f;
 constexpr float ASTEROID_SPEED = 280.0f;
 constexpr float ASTEROID_SPAWN_TIME = 3.0f;
 
+// Función auxiliar para verificar colisión circular
 bool checkCollision(const sf::Vector2f& pos1, float radius1, const sf::Vector2f& pos2, float radius2) {
     float dx = pos1.x - pos2.x;
     float dy = pos1.y - pos2.y;
@@ -33,6 +35,79 @@ bool checkCollision(const sf::Vector2f& pos1, float radius1, const sf::Vector2f&
     float radiusSum = radius1 + radius2;
     return distanceSquared <= (radiusSum * radiusSum);
 }
+
+// Clase para manejar métodos de detección de colisión
+class CollisionDriver {
+public:
+    using CollisionMethod = std::function<bool(const std::vector<sf::Vector2f>&, const std::vector<sf::Vector2f>&)>;
+
+    CollisionDriver() {
+        // Registrar el método SAT por defecto
+        methods["sat"] = polygonIntersectionSAT;
+    }
+
+    void addMethod(const std::string& name, CollisionMethod method) {
+        methods[name] = method;
+    }
+
+    bool checkCollision(const std::string& method, const std::vector<sf::Vector2f>& poly1, const std::vector<sf::Vector2f>& poly2) {
+        if (methods.find(method) == methods.end()) {
+            throw std::runtime_error("Método no encontrado: " + method);
+        }
+        return methods[method](poly1, poly2);
+    }
+
+private:
+    std::map<std::string, CollisionMethod> methods;
+
+    // Implementación del algoritmo SAT
+    static bool polygonIntersectionSAT(const std::vector<sf::Vector2f>& poly1, const std::vector<sf::Vector2f>& poly2) {
+        auto getAxes = [](const std::vector<sf::Vector2f>& poly) {
+            std::vector<sf::Vector2f> axes;
+            for (size_t i = 0; i < poly.size(); ++i) {
+                sf::Vector2f p1 = poly[i];
+                sf::Vector2f p2 = poly[(i + 1) % poly.size()];
+                sf::Vector2f edge = { p2.x - p1.x, p2.y - p1.y };
+                sf::Vector2f normal = { -edge.y, edge.x };
+                float length = std::sqrt(normal.x * normal.x + normal.y * normal.y);
+                axes.push_back({ normal.x / length, normal.y / length });
+            }
+            return axes;
+        };
+
+        auto projectPolygon = [](const std::vector<sf::Vector2f>& poly, const sf::Vector2f& axis) {
+            float min = poly[0].x * axis.x + poly[0].y * axis.y;
+            float max = min;
+            for (const auto& vertex : poly) {
+                float projection = vertex.x * axis.x + vertex.y * axis.y;
+                if (projection < min) min = projection;
+                if (projection > max) max = projection;
+            }
+            return std::make_pair(min, max);
+        };
+
+        auto overlap = [](const std::pair<float, float>& proj1, const std::pair<float, float>& proj2) {
+            return proj1.second >= proj2.first && proj2.second >= proj1.first;
+        };
+
+        auto axes1 = getAxes(poly1);
+        auto axes2 = getAxes(poly2);
+
+        for (const auto& axis : axes1) {
+            if (!overlap(projectPolygon(poly1, axis), projectPolygon(poly2, axis))) {
+                return false;  // Separación encontrada
+            }
+        }
+
+        for (const auto& axis : axes2) {
+            if (!overlap(projectPolygon(poly1, axis), projectPolygon(poly2, axis))) {
+                return false;  // Separación encontrada
+            }
+        }
+
+        return true;  // No se encontró separación, hay intersección
+    }
+};
 
 // Clase base para entidades
 class Entity {
@@ -44,6 +119,7 @@ public:
     sf::Vector2f position;
     float angle;
 };
+
 
 // Vectores globales para manejar entidades
 std::vector<Entity*> entities{};
@@ -210,7 +286,7 @@ int main() {
     backgroundMusic.play();
 
     // Resto del código...
-
+    
     entities.push_back(new Player());
     int score = 0; // Puntaje inicial
 
