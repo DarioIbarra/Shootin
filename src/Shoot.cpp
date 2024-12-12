@@ -322,7 +322,6 @@ int main() {
     bool gameStarted = false; // Variable que indica si el juego ha iniciado
 
     // Asteroides en la pantalla de inicio
-    std::vector<Asteroid*> inicioAsteroids;
     for (int i = 0; i < 10; i++) {
         inicioAsteroids.push_back(new Asteroid());
         inicioAsteroids[i]->position = sf::Vector2f(fmod(rand(), SCREEN_WIDTH), fmod(rand(), SCREEN_HEIGHT));
