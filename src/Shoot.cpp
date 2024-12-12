@@ -271,6 +271,8 @@ private:
     sf::Vector2f direction;
 };
 
+std::vector<Asteroid*> inicioAsteroids;
+
 // Función principal
 int main() {
     sf::RenderWindow window(sf::VideoMode(static_cast<int>(SCREEN_WIDTH), static_cast<int>(SCREEN_HEIGHT)), "Asteroids Game", sf::Style::Close | sf::Style::Titlebar);
@@ -317,6 +319,14 @@ int main() {
     explosionSound.setVolume(100);
 
     bool gameOver = false;  // Variable que indica si el juego ha terminado
+    bool gameStarted = false; // Variable que indica si el juego ha iniciado
+
+    // Asteroides en la pantalla de inicio
+    std::vector<Asteroid*> inicioAsteroids;
+    for (int i = 0; i < 10; i++) {
+        inicioAsteroids.push_back(new Asteroid());
+        inicioAsteroids[i]->position = sf::Vector2f(fmod(rand(), SCREEN_WIDTH), fmod(rand(), SCREEN_HEIGHT));
+    }
 
     while (window.isOpen()) {
         float deltaTime = clock.restart().asSeconds();
@@ -324,6 +334,11 @@ int main() {
         while (window.pollEvent(e)) {
             if (e.type == sf::Event::Closed) {
                 window.close();
+            }
+
+            // Detectar si el jugador presiona Enter para iniciar el juego
+            if (!gameStarted && e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::Return) {
+                gameStarted = true;
             }
 
             // Detectar si el jugador presiona Space para reiniciar el juego
@@ -339,68 +354,74 @@ int main() {
                 entities.clear();
                 entities.push_back(new Player());  // Crear el jugador nuevamente
             }
+
+            // Detectar si el jugador presiona E para salir en el Game Over
+            if (gameOver && e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::E) {
+                window.close();
+            }
         }
 
         // Lógica de generación de asteroides
-        asteroidSpawnTime -= deltaTime;
-        if (asteroidSpawnTime <= 0.0f) {
-            asteroidSpawnTime = ASTEROID_SPAWN_TIME;
-            toAddList.push_back(new Asteroid());
-        }
+        if (gameStarted) {
+            asteroidSpawnTime -= deltaTime;
+            if (asteroidSpawnTime <= 0.0f) {
+                asteroidSpawnTime = ASTEROID_SPAWN_TIME;
+                toAddList.push_back(new Asteroid());
+            }
 
-        // Actualización de las entidades
-        for (auto& entity : entities) {
-            entity->update(deltaTime);
-        }
-
-        // Detectar colisiones entre balas y asteroides
-        for (auto& entity1 : entities) {
-            Bullet* bullet = dynamic_cast<Bullet*>(entity1);
-            if (bullet) {
-                for (auto& entity2 : entities) {
-                    Asteroid* asteroid = dynamic_cast<Asteroid*>(entity2);
-                    if (asteroid && checkCollision(bullet->position, 5.0f, asteroid->position, ASTEROID_W / 2.0f)) {
-                        // Colisión detectada
-                        toRemoveList.push_back(bullet);
-                        toRemoveList.push_back(asteroid);
-                        score += 20; // Incrementar puntaje al destruir un asteroide
+            // Actualización de las entidades
+            for (auto& entity : entities) {
+                entity->update(deltaTime);
+            }
+            // Detectar colisiones entre balas y asteroides
+            for (auto& entity1 : entities) {
+                Bullet* bullet = dynamic_cast<Bullet*>(entity1);
+                if (bullet) {
+                    for (auto& entity2 : entities) {
+                        Asteroid* asteroid = dynamic_cast<Asteroid*>(entity2);
+                        if (asteroid && checkCollision(bullet->position, 5.0f, asteroid->position, ASTEROID_W / 2.0f)) {
+                            // Colisión detectada
+                            toRemoveList.push_back(bullet);
+                            toRemoveList.push_back(asteroid);
+                            score += 20; // Incrementar puntaje al destruir un asteroide
+                        }
                     }
                 }
             }
-        }
 
-        // Detectar colisión entre el jugador y los asteroides
-        for (auto& entity : entities) {
-            Player* player = dynamic_cast<Player*>(entity);
-            if (player) {
-                for (auto& entity2 : entities) {
-                    Asteroid* asteroid = dynamic_cast<Asteroid*>(entity2);
-                    if (asteroid && checkCollision(player->position, PLAYER_W / 2.0f, asteroid->position, ASTEROID_W / 2.0f)) {
-                        // Colisión detectada entre el jugador y un asteroide
-                        gameOver = true;  // El juego ha terminado
+            // Detectar colisión entre el jugador y los asteroides
+            for (auto& entity : entities) {
+                Player* player = dynamic_cast<Player*>(entity);
+                if (player) {
+                    for (auto& entity2 : entities) {
+                        Asteroid* asteroid = dynamic_cast<Asteroid*>(entity2);
+                        if (asteroid && checkCollision(player->position, PLAYER_W / 2.0f, asteroid->position, ASTEROID_W / 2.0f)) {
+                            // Colisión detectada entre el jugador y un asteroide
+                            gameOver = true;  // El juego ha terminado
+                        }
                     }
                 }
             }
-        }
 
-        // Eliminar entidades marcadas para ser eliminadas
-        for (auto& entity : toRemoveList) {
-            auto it = std::find(entities.begin(), entities.end(), entity);
-            if (it != entities.end()) {
-                delete *it;
-                entities.erase(it);
+            // Eliminar entidades marcadas para ser eliminadas
+            for (auto& entity : toRemoveList) {
+                auto it = std::find(entities.begin(), entities.end(), entity);
+                if (it != entities.end()) {
+                    delete *it;
+                    entities.erase(it);
+                }
             }
-        }
-        toRemoveList.clear();
+            toRemoveList.clear();
 
-        // Añadir nuevas entidades
-        for (auto& entity : toAddList) {
-            entities.push_back(entity);
-        }
-        toAddList.clear();
+            // Añadir nuevas entidades
+            for (auto& entity : toAddList) {
+                entities.push_back(entity);
+            }
+            toAddList.clear();
 
-        // Actualizar el texto del puntaje
-        scoreText.setString("Score: " + std::to_string(score));
+            // Actualizar el texto del puntaje
+            scoreText.setString("Score: " + std::to_string(score));
+        }
 
         // Renderizado
         if (gameOver) {
@@ -426,6 +447,44 @@ int main() {
             restartText.setPosition(SCREEN_WIDTH / 2 - restartText.getLocalBounds().width / 2, 
                                     SCREEN_HEIGHT / 2 + 100);
             window.draw(restartText);
+
+            // Mostrar la opción de salir
+            sf::Text exitText;
+            exitText.setFont(font);
+            exitText.setCharacterSize(40);
+            exitText.setFillColor(sf::Color::White);
+            exitText.setString("Press E to Exit");
+            exitText.setPosition(SCREEN_WIDTH / 2 - exitText.getLocalBounds().width / 2, 
+                                SCREEN_HEIGHT / 2 + 150);
+            window.draw(exitText);
+        } else if (!gameStarted) {
+            // Limpiar la pantalla con fondo negro cuando el juego no ha iniciado
+            window.clear(sf::Color::Black);
+
+            // Mostrar el título del juego
+            sf::Text titleText;
+            titleText.setFont(font);
+            titleText.setCharacterSize(80);
+            titleText.setFillColor(sf::Color::White);
+            titleText.setString("DART PROYECT");
+            titleText.setPosition(SCREEN_WIDTH / 2 - titleText.getLocalBounds().width / 2, 
+                                  SCREEN_HEIGHT / 2 - titleText.getLocalBounds().height / 2);
+            window.draw(titleText);
+
+            // Mostrar la opción de iniciar el juego
+            sf::Text startText;
+            startText.setFont(font);
+            startText.setCharacterSize(40);
+            startText.setFillColor(sf::Color::White);
+            startText.setString("Press Enter to Start");
+            startText.setPosition(SCREEN_WIDTH / 2 - startText.getLocalBounds().width / 2, 
+                                  SCREEN_HEIGHT / 2 + 100);
+            window.draw(startText);
+
+            // Mostrar los asteroides en la pantalla de inicio
+            for (auto& asteroid : inicioAsteroids) {
+                asteroid->render(window);
+            }
         } else {
             // Limpiar la pantalla y mostrar el juego normal si no está en "Game Over"
             window.clear();
@@ -443,11 +502,12 @@ int main() {
         delete entity;
     }
 
+    for (auto& asteroid : inicioAsteroids) {
+        delete asteroid;
+    }
+
     return 0;
 }
-
-
-
 
 
 
