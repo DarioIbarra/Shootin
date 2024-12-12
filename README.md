@@ -76,3 +76,14 @@ pacman -S mingw-w64-x86_64-box2d
 
 ## Architecture of the classes
  ![](assets/images/plantuml_DartProject.png) 
+
+## Screens of the game
+
+- ## Start
+ ![](assets/images/inicio.png) 
+
+ - ## Playing
+ ![](assets/images/juego.png) 
+
+ - ## Game over
+ ![](assets/images/final.png) 
