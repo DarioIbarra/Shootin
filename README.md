@@ -1,4 +1,5 @@
-# GameExamples
+# Dart Project
+
 
 The project is developed on MinGW64 using Msys2, and Visual Studio Code is used as the editor.
 
@@ -61,11 +62,17 @@ pacman -S mingw-w64-x86_64-box2d
 - PlantUML
 - GitGraph
 
+# Game  
+
 ## Controls to Play
 - from your keybord you have to localize the keys:
 - **W** moves up
 - **A** moves left
-- **D** moves right
 - **S** moves down
+- **D** moves right
 - **Space** shoots
 - **p** re start
+- **e** Exit
+
+## Architecture of the classes
+ ![](assets/images/plantuml_DartProject.png) 
